@@ -803,46 +803,96 @@ export class GitGraphView extends Disposable {
 	/* Helper Methods */
 
 	/**
-	 * Add commit details to the Copilot Chat.
+	 * Add commit details to GitHub Copilot Chat using the official context API.
+	 *
+	 * This implementation follows the official GitHub Copilot Chat context API:
+	 * - API Reference: https://github.com/microsoft/vscode-copilot-chat/blob/main/docs/context.md
+	 * - VS Code Git History Provider: https://github.com/microsoft/vscode/blob/main/extensions/git/src/historyProvider.ts
+	 *
 	 * @param repo The repository containing the commit.
 	 * @param commitHash The commit hash to add to chat.
 	 * @returns Error message if failed, null if successful.
 	 */
 	private async addCommitToChat(repo: string, commitHash: string): Promise<ErrorInfo> {
 		try {
-			// Create a URI for the commit using git scheme
-			// This follows the same pattern as VS Code's built-in SCM integration
-			const commitUri = vscode.Uri.parse(`git:${repo}?${commitHash}`);
+			// Get commit details first for the context object
+			const commitDetailsData = await this.dataSource.getCommitDetails(repo, commitHash, true);
 
-			// Open chat with the commit attached as a history item change
-			// This matches how VS Code's native "Add to Chat" works for SCM
-			await vscode.commands.executeCommand('workbench.action.chat.open', {
-				mode: 'agent',
-				attachHistoryItemChanges: [{
-					uri: commitUri,
-					historyItemId: commitHash
-				}],
-				query: `Explain commit ${commitHash.substring(0, 8)}`
+			if (commitDetailsData.error) {
+				return commitDetailsData.error;
+			}
+
+			if (!commitDetailsData.commitDetails) {
+				return 'Failed to retrieve commit details';
+			}
+
+			const details = commitDetailsData.commitDetails;
+
+			// Extract the commit message (first line) for the label
+			const commitMessage = details.body.split('\n')[0] || commitHash.substring(0, 8);
+
+			// Format file changes for the details
+			const filesChanged = details.fileChanges.map(file => {
+				const status = file.type === 'A' ? 'Added' : file.type === 'M' ? 'Modified' : file.type === 'D' ? 'Deleted' : file.type === 'R' ? 'Renamed' : 'Unknown';
+				const filePath = file.newFilePath || file.oldFilePath;
+				let fileInfo = `${status}: ${filePath}`;
+				if (file.additions !== null || file.deletions !== null) {
+					fileInfo += ` (+${file.additions || 0}/-${file.deletions || 0})`;
+				}
+				return fileInfo;
 			});
+
+			// Create a formatted summary including the commit message and file stats
+			const fileSummary = filesChanged.length > 0
+				? `\n\nFiles changed (${filesChanged.length}):\n${filesChanged.join('\n')}`
+				: '';
+			const summary = details.body + fileSummary;
+
+			// Create the context object following the official Copilot Chat context schema
+			// See: https://github.com/microsoft/vscode-copilot-chat/blob/main/docs/context.md
+			const contextObject = {
+				type: 'sourceControlItem',
+				id: commitHash,
+				label: commitMessage,
+				details: {
+					author: `${details.author} <${details.authorEmail}>`,
+					date: new Date(details.authorDate * 1000).toISOString(),
+					files: filesChanged,
+					summary: summary
+				}
+			};
+
+			// Use the official GitHub Copilot Chat command to attach the selection
+			// This is the recommended way to add context to Copilot Chat
+			await vscode.commands.executeCommand('github.copilot.chat.attachSelection', {
+				selection: [contextObject],
+				source: 'git-graph'
+			});
+
+			// Focus the Copilot Chat view after attaching the context
+			await vscode.commands.executeCommand('workbench.panel.chat.view.copilot.focus');
 
 			return null;
 		} catch (error) {
-			// Fallback: Copy commit details to clipboard if chat command fails
-			try {
-				const commitDetails = await this.dataSource.getCommitDetails(repo, commitHash, true);
+			// Graceful fallback for older VS Code versions or when Copilot is not available
+			// Copy commit details to clipboard and notify the user
+			this.logger.log('Copilot Chat API not available, falling back to clipboard: ' + (error instanceof Error ? error.message : String(error)));
 
-				if (commitDetails.error) {
-					return commitDetails.error;
+			try {
+				const commitDetailsData = await this.dataSource.getCommitDetails(repo, commitHash, true);
+
+				if (commitDetailsData.error) {
+					return commitDetailsData.error;
 				}
 
-				if (!commitDetails.commitDetails) {
+				if (!commitDetailsData.commitDetails) {
 					return 'Failed to retrieve commit details';
 				}
 
-				const details = commitDetails.commitDetails;
+				const details = commitDetailsData.commitDetails;
 
 				// Format the commit information for the clipboard
-				let commitInfo = `Commit: ${commitHash.substring(0, 8)}\n`;
+				let commitInfo = `Commit: ${commitHash}\n`;
 				commitInfo += `Author: ${details.author} <${details.authorEmail}>\n`;
 				commitInfo += `Date: ${new Date(details.authorDate * 1000).toISOString()}\n\n`;
 				commitInfo += `${details.body}\n\n`;
@@ -861,7 +911,15 @@ export class GitGraphView extends Disposable {
 				}
 
 				await vscode.env.clipboard.writeText(commitInfo);
-				return 'Copilot Chat not available. Commit details copied to clipboard.';
+
+				// Try to focus the chat window even in fallback mode
+				try {
+					await vscode.commands.executeCommand('workbench.panel.chat.view.copilot.focus');
+				} catch (focusError) {
+					// Silently ignore if focus command fails
+				}
+
+				return 'GitHub Copilot Chat not available. Commit details copied to clipboard.';
 			} catch (fallbackError) {
 				return 'Failed to add commit to chat: ' + (error instanceof Error ? error.message : String(error));
 			}

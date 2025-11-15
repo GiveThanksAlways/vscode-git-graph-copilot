@@ -19,7 +19,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Apply, Create Branch From, Drop & Pop Stashes
         * View annotated tag details (name, email, date and message)
         * Copy commit hashes, and branch, stash & tag names to the clipboard
-        * **Add to Chat** - Send commit as SCM context to GitHub Copilot Chat using the same mechanism as VS Code's built-in "Add to Chat" button for source control
+        * **Add to Chat** - Send commit information to GitHub Copilot Chat using the official Copilot Chat context API. The commit is attached as a source control item with full details (hash, author, date, message, and file changes). If GitHub Copilot is not available, commit details are copied to the clipboard as a fallback.
     * View commit details and file changes by clicking on a commit. On the Commit Details View you can:
         * View the Visual Studio Code Diff of any file change by clicking on it.
         * Open the current version of any file that was affected in the commit.
@@ -143,6 +143,28 @@ A summary of the Git Graph extension settings are:
 This extension consumes the following settings:
 
 * `git.path`: Specifies the path and filename of a portable Git installation.
+
+## GitHub Copilot Integration
+
+The "Add to Chat" feature integrates with GitHub Copilot Chat using the official Copilot Chat context API. This allows you to send commit information directly to Copilot for analysis, explanations, or review.
+
+### Requirements
+* Visual Studio Code with GitHub Copilot extension installed
+* The feature uses the `github.copilot.chat.attachSelection` command, which is available in recent versions of VS Code
+
+### Fallback Behavior
+If GitHub Copilot is not installed or the Copilot Chat API is unavailable (e.g., in older VS Code versions), the feature gracefully falls back to copying the commit details to your clipboard. You can then paste the information into any chat or editor.
+
+### Usage
+1. Right-click on any commit in the Git Graph view
+2. Select "Add to Chat" from the context menu
+3. The commit details (hash, author, date, message, and file changes) will be attached to GitHub Copilot Chat
+4. Copilot Chat will open and be ready for your questions about the commit
+
+### Technical Details
+The implementation follows the official GitHub Copilot Chat context API specification:
+- Context API: https://github.com/microsoft/vscode-copilot-chat/blob/main/docs/context.md
+- Matches the pattern used by VS Code's built-in git history provider: https://github.com/microsoft/vscode/blob/main/extensions/git/src/historyProvider.ts
 
 ## Extension Commands
 
