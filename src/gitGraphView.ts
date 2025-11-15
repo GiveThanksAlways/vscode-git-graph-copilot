@@ -810,58 +810,61 @@ export class GitGraphView extends Disposable {
 	 */
 	private async addCommitToChat(repo: string, commitHash: string): Promise<ErrorInfo> {
 		try {
-			// Get commit details
-			const commitDetails = await this.dataSource.getCommitDetails(repo, commitHash, true);
+			// Create a URI for the commit using git scheme
+			// This follows the same pattern as VS Code's built-in SCM integration
+			const commitUri = vscode.Uri.parse(`git:${repo}?${commitHash}`);
 
-			if (commitDetails.error) {
-				return commitDetails.error;
-			}
+			// Open chat with the commit attached as a history item change
+			// This matches how VS Code's native "Add to Chat" works for SCM
+			await vscode.commands.executeCommand('workbench.action.chat.open', {
+				mode: 'agent',
+				attachHistoryItemChanges: [{
+					uri: commitUri,
+					historyItemId: commitHash
+				}],
+				query: `Explain commit ${commitHash.substring(0, 8)}`
+			});
 
-			if (!commitDetails.commitDetails) {
-				return 'Failed to retrieve commit details';
-			}
-
-			const details = commitDetails.commitDetails;
-
-			// Format the commit information for the chat
-			let commitInfo = `Commit: ${commitHash.substring(0, 8)}\n`;
-			commitInfo += `Author: ${details.author} <${details.authorEmail}>\n`;
-			commitInfo += `Date: ${new Date(details.authorDate * 1000).toISOString()}\n\n`;
-			commitInfo += `${details.body}\n\n`;
-
-			// Add file changes summary
-			if (details.fileChanges.length > 0) {
-				commitInfo += `Files changed (${details.fileChanges.length}):\n`;
-				for (const file of details.fileChanges) {
-					const status = file.type === 'A' ? 'Added' : file.type === 'M' ? 'Modified' : file.type === 'D' ? 'Deleted' : file.type === 'R' ? 'Renamed' : 'Unknown';
-					commitInfo += `  ${status}: ${file.newFilePath || file.oldFilePath}`;
-					if (file.additions !== null || file.deletions !== null) {
-						commitInfo += ` (+${file.additions || 0}/-${file.deletions || 0})`;
-					}
-					commitInfo += '\n';
-				}
-			}
-
-			// Try to use VS Code Chat API if available (VS Code 1.90+)
-			// Using any type to avoid compilation errors with older VS Code types
-			const vsCodeAny = vscode as any;
-			if (vsCodeAny.chat && typeof vsCodeAny.chat.sendMessage === 'function') {
-				// VS Code Chat API is available
-				await vsCodeAny.chat.sendMessage(commitInfo);
-				return null;
-			} else {
-				// Fallback: Try using command if available
-				try {
-					await vscode.commands.executeCommand('workbench.panel.chat.view.copilot.focus');
-					await vscode.env.clipboard.writeText(commitInfo);
-					return 'Commit details copied to clipboard. Please paste into Copilot Chat.';
-				} catch (e) {
-					await vscode.env.clipboard.writeText(commitInfo);
-					return 'Copilot Chat not available. Commit details copied to clipboard.';
-				}
-			}
+			return null;
 		} catch (error) {
-			return 'Failed to add commit to chat: ' + (error instanceof Error ? error.message : String(error));
+			// Fallback: Copy commit details to clipboard if chat command fails
+			try {
+				const commitDetails = await this.dataSource.getCommitDetails(repo, commitHash, true);
+
+				if (commitDetails.error) {
+					return commitDetails.error;
+				}
+
+				if (!commitDetails.commitDetails) {
+					return 'Failed to retrieve commit details';
+				}
+
+				const details = commitDetails.commitDetails;
+
+				// Format the commit information for the clipboard
+				let commitInfo = `Commit: ${commitHash.substring(0, 8)}\n`;
+				commitInfo += `Author: ${details.author} <${details.authorEmail}>\n`;
+				commitInfo += `Date: ${new Date(details.authorDate * 1000).toISOString()}\n\n`;
+				commitInfo += `${details.body}\n\n`;
+
+				// Add file changes summary
+				if (details.fileChanges.length > 0) {
+					commitInfo += `Files changed (${details.fileChanges.length}):\n`;
+					for (const file of details.fileChanges) {
+						const status = file.type === 'A' ? 'Added' : file.type === 'M' ? 'Modified' : file.type === 'D' ? 'Deleted' : file.type === 'R' ? 'Renamed' : 'Unknown';
+						commitInfo += `  ${status}: ${file.newFilePath || file.oldFilePath}`;
+						if (file.additions !== null || file.deletions !== null) {
+							commitInfo += ` (+${file.additions || 0}/-${file.deletions || 0})`;
+						}
+						commitInfo += '\n';
+					}
+				}
+
+				await vscode.env.clipboard.writeText(commitInfo);
+				return 'Copilot Chat not available. Commit details copied to clipboard.';
+			} catch (fallbackError) {
+				return 'Failed to add commit to chat: ' + (error instanceof Error ? error.message : String(error));
+			}
 		}
 	}
 
