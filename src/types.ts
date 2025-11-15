@@ -368,6 +368,7 @@ export interface ContextMenuActionsVisibility {
 		readonly reset: boolean;
 		readonly copyHash: boolean;
 		readonly copySubject: boolean;
+		readonly addToChat: boolean;
 	};
 	readonly commitDetailsViewFile: {
 		readonly viewDiff: boolean;
@@ -728,6 +729,14 @@ export interface RequestCopyToClipboard extends BaseMessage {
 export interface ResponseCopyToClipboard extends ResponseWithErrorInfo {
 	readonly command: 'copyToClipboard';
 	readonly type: string;
+}
+
+export interface RequestAddCommitToChat extends RepoRequest {
+	readonly command: 'addCommitToChat';
+	readonly commitHash: string;
+}
+export interface ResponseAddCommitToChat extends ResponseWithErrorInfo {
+	readonly command: 'addCommitToChat';
 }
 
 export interface RequestCreateArchive extends RepoRequest {
@@ -1260,6 +1269,7 @@ export type RequestMessage =
 	| RequestCompareCommits
 	| RequestCopyFilePath
 	| RequestCopyToClipboard
+	| RequestAddCommitToChat
 	| RequestCreateArchive
 	| RequestCreateBranch
 	| RequestCreatePullRequest
@@ -1324,6 +1334,7 @@ export type ResponseMessage =
 	| ResponseCommitDetails
 	| ResponseCopyFilePath
 	| ResponseCopyToClipboard
+	| ResponseAddCommitToChat
 	| ResponseCreateArchive
 	| ResponseCreateBranch
 	| ResponseCreatePullRequest

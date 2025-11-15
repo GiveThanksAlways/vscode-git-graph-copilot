@@ -288,7 +288,8 @@ describe('Config', () => {
 					rebase: true,
 					reset: true,
 					copyHash: true,
-					copySubject: true
+					copySubject: true,
+					addToChat: true
 				},
 				commitDetailsViewFile: {
 					viewDiff: true,
@@ -370,7 +371,8 @@ describe('Config', () => {
 					rebase: true,
 					reset: true,
 					copyHash: true,
-					copySubject: true
+					copySubject: true,
+					addToChat: true
 				},
 				commitDetailsViewFile: {
 					viewDiff: true,
@@ -470,7 +472,8 @@ describe('Config', () => {
 					rebase: true,
 					reset: true,
 					copyHash: true,
-					copySubject: true
+					copySubject: true,
+					addToChat: true
 				},
 				commitDetailsViewFile: {
 					viewDiff: true,
