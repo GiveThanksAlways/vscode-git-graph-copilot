@@ -1232,6 +1232,13 @@ class GitGraphView {
 				onClick: () => {
 					sendMessage({ command: 'copyToClipboard', type: 'Commit Subject', data: commit.message });
 				}
+			},
+			{
+				title: 'Add to Chat',
+				visible: visibility.addToChat,
+				onClick: () => {
+					sendMessage({ command: 'addToChat', repo: this.currentRepo, commitHash: hash });
+				}
 			}
 		]];
 	}

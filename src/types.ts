@@ -368,6 +368,7 @@ export interface ContextMenuActionsVisibility {
 		readonly reset: boolean;
 		readonly copyHash: boolean;
 		readonly copySubject: boolean;
+		readonly addToChat: boolean;
 	};
 	readonly commitDetailsViewFile: {
 		readonly viewDiff: boolean;
@@ -612,6 +613,14 @@ export interface ResponseAddTag extends ResponseWithMultiErrorInfo {
 	readonly tagName: string;
 	readonly pushToRemote: string | null;
 	readonly commitHash: string;
+}
+
+export interface RequestAddToChat extends RepoRequest {
+	readonly command: 'addToChat';
+	readonly commitHash: string;
+}
+export interface ResponseAddToChat extends ResponseWithErrorInfo {
+	readonly command: 'addToChat';
 }
 
 export interface RequestApplyStash extends RepoRequest {
@@ -1250,6 +1259,7 @@ export interface ResponseViewScm extends ResponseWithErrorInfo {
 export type RequestMessage =
 	RequestAddRemote
 	| RequestAddTag
+	| RequestAddToChat
 	| RequestApplyStash
 	| RequestBranchFromStash
 	| RequestCheckoutBranch
@@ -1314,6 +1324,7 @@ export type RequestMessage =
 export type ResponseMessage =
 	ResponseAddRemote
 	| ResponseAddTag
+	| ResponseAddToChat
 	| ResponseApplyStash
 	| ResponseBranchFromStash
 	| ResponseCheckoutBranch

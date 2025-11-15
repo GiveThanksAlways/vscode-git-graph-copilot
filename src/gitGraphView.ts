@@ -192,6 +192,12 @@ export class GitGraphView extends Disposable {
 					errors: errorInfos
 				});
 				break;
+			case 'addToChat':
+				this.sendMessage({
+					command: 'addToChat',
+					error: await this.addCommitToChat(msg.repo, msg.commitHash)
+				});
+				break;
 			case 'applyStash':
 				this.sendMessage({
 					command: 'applyStash',
@@ -761,6 +767,57 @@ export class GitGraphView extends Disposable {
 			</head>
 			${body}
 		</html>`;
+	}
+
+
+	/* Chat Integration Methods */
+
+	/**
+	 * Add commit information to the VS Code Chat.
+	 * @param repo The repository path.
+	 * @param commitHash The commit hash.
+	 * @returns ErrorInfo if an error occurred, otherwise NULL.
+	 */
+	private async addCommitToChat(repo: string, commitHash: string): Promise<ErrorInfo> {
+		try {
+			// Get commit details
+			const commitDetails = await this.dataSource.getCommitDetails(repo, commitHash, true);
+			if (commitDetails.error) {
+				return commitDetails.error;
+			}
+
+			if (!commitDetails.commitDetails) {
+				return 'Unable to retrieve commit details.';
+			}
+
+			const details = commitDetails.commitDetails;
+			
+			// Format commit information for chat
+			const commitInfo = `Git Commit Information:
+Commit: ${commitHash}
+Author: ${details.author} <${details.authorEmail}>
+Date: ${new Date(details.authorDate * 1000).toLocaleString()}
+Message: ${details.body}
+
+Files changed: ${details.fileChanges.length}
+${details.fileChanges.map(f => `  ${f.type} ${f.newFilePath}`).join('\n')}`;
+
+			// Try to add to chat using the Chat API
+			try {
+				await vscode.commands.executeCommand('workbench.action.chat.open', {
+					query: commitInfo
+				});
+			} catch (err) {
+				// If chat command is not available, try alternative approach
+				// Copy to clipboard and show info message
+				await vscode.env.clipboard.writeText(commitInfo);
+				vscode.window.showInformationMessage('Commit information copied to clipboard. Paste it into Copilot Chat.');
+			}
+
+			return null;
+		} catch (e) {
+			return 'Failed to add commit to chat: ' + (e as Error).message;
+		}
 	}
 
 
