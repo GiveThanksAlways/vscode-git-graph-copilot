@@ -791,7 +791,7 @@ export class GitGraphView extends Disposable {
 			}
 
 			const details = commitDetails.commitDetails;
-			
+
 			// Format commit information for chat
 			const commitInfo = `Git Commit Information:
 Commit: ${commitHash}
