@@ -481,8 +481,8 @@ export class DataSource extends Disposable {
 				return stdout.trim();
 			});
 
-			// Get commit diff
-			const diff = await this.spawnGit(['diff', commitHash + '^..' + commitHash, '--'], repo, (stdout) => {
+			// Get commit diff using ^! which shows changes introduced by the commit
+			const diff = await this.spawnGit(['diff', commitHash + '^!', '--'], repo, (stdout) => {
 				return stdout;
 			}).catch(() => {
 				// For initial commits without a parent, use diff-tree

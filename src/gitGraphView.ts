@@ -830,13 +830,13 @@ export class GitGraphView extends Disposable {
 		}
 
 		const shortHash = commitHash.substring(0, 7);
-		const content = `Commit ${commitHash}\n\nMessage:\n${commitDetails.message}\n\nDiff:\n\`\`\`diff\n${commitDetails.diff}\n\`\`\``;
+		const content = `Commit ${shortHash}\n\nMessage:\n${commitDetails.message}\n\nDiff:\n\`\`\`diff\n${commitDetails.diff}\n\`\`\``;
 
 		try {
 			// Try to use VS Code's built-in chat API if available
 			const chatCommand = 'workbench.action.chat.open';
 			await vscode.commands.executeCommand(chatCommand, {
-				query: `@workspace /explain This is commit ${shortHash}:\n\n${content}`
+				query: `@workspace /explain ${content}`
 			});
 			return null;
 		} catch (e) {
