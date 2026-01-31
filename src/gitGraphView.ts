@@ -274,6 +274,12 @@ export class GitGraphView extends Disposable {
 					error: await copyToClipboard(msg.data)
 				});
 				break;
+			case 'addToCopilotChat':
+				this.sendMessage({
+					command: 'addToCopilotChat',
+					error: await this.addToCopilotChat(msg.repo, msg.commitHash)
+				});
+				break;
 			case 'createArchive':
 				this.sendMessage({
 					command: 'createArchive',
@@ -808,6 +814,48 @@ export class GitGraphView extends Disposable {
 			lastActiveRepo: this.extensionState.getLastActiveRepo(),
 			loadViewTo: loadViewTo
 		});
+	}
+
+	/**
+	 * Add commit details to Copilot Chat.
+	 * @param repo The path of the repository.
+	 * @param commitHash The hash of the commit.
+	 * @returns Error info if an error occurred, or null on success.
+	 */
+	private async addToCopilotChat(repo: string, commitHash: string): Promise<ErrorInfo> {
+		const commitDetails = await this.dataSource.getCommitDetailsForCopilotChat(repo, commitHash);
+
+		if (commitDetails.error !== null) {
+			return commitDetails.error;
+		}
+
+		const shortHash = commitHash.substring(0, 7);
+		const content = `Commit ${commitHash}\n\nMessage:\n${commitDetails.message}\n\nDiff:\n\`\`\`diff\n${commitDetails.diff}\n\`\`\``;
+
+		try {
+			// Try to use VS Code's built-in chat API if available
+			const chatCommand = 'workbench.action.chat.open';
+			await vscode.commands.executeCommand(chatCommand, {
+				query: `@workspace /explain This is commit ${shortHash}:\n\n${content}`
+			});
+			return null;
+		} catch (e) {
+			// Fallback: copy to clipboard and show message
+			try {
+				await vscode.env.clipboard.writeText(content);
+				vscode.window.showInformationMessage(
+					`Commit ${shortHash} details copied to clipboard. You can paste it into Copilot Chat.`,
+					'Open Chat'
+				).then(selection => {
+					if (selection === 'Open Chat') {
+						vscode.commands.executeCommand('workbench.action.chat.open');
+					}
+				});
+				return null;
+			} catch (clipboardError) {
+				return 'Failed to add commit to Copilot Chat: ' + (clipboardError instanceof Error ? clipboardError.message : 'Unknown error');
+			}
+		}
 	}
 }
 

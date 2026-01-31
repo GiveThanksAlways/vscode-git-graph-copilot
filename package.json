@@ -241,6 +241,10 @@
 								"copySubject": {
 									"type": "boolean",
 									"title": "Copy Commit Subject to Clipboard"
+								},
+								"addToCopilotChat": {
+									"type": "boolean",
+									"title": "Add to Copilot Chat"
 								}
 							}
 						},

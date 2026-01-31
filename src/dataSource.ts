@@ -465,6 +465,38 @@ export class DataSource extends Disposable {
 	}
 
 	/**
+	 * Get commit details (message and diff) formatted for Copilot Chat.
+	 * @param repo The path of the repository.
+	 * @param commitHash The hash of the commit.
+	 * @returns An object containing commit message and diff, or error information.
+	 */
+	public async getCommitDetailsForCopilotChat(repo: string, commitHash: string): Promise<{ message: string | null, diff: string | null, error: ErrorInfo }> {
+		if (this.gitExecutable === null) {
+			return { message: null, diff: null, error: UNABLE_TO_FIND_GIT_MSG };
+		}
+
+		try {
+			// Get commit message
+			const message = await this.spawnGit(['-c', 'log.showSignature=false', 'log', '--format=%B', '-n', '1', commitHash, '--'], repo, (stdout) => {
+				return stdout.trim();
+			});
+
+			// Get commit diff
+			const diff = await this.spawnGit(['diff', commitHash + '^..' + commitHash, '--'], repo, (stdout) => {
+				return stdout;
+			}).catch(() => {
+				// For initial commits without a parent, use diff-tree
+				return this.spawnGit(['diff-tree', '--patch', '--root', commitHash, '--'], repo, (stdout) => stdout);
+			});
+
+			return { message, diff, error: null };
+		} catch (e) {
+			const errorMessage = e instanceof Error ? e.message : 'Failed to get commit details';
+			return { message: null, diff: null, error: errorMessage };
+		}
+	}
+
+	/**
 	 * Get the URL of a repositories remote.
 	 * @param repo The path of the repository.
 	 * @param remote The name of the remote.
