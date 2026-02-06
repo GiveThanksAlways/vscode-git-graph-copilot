@@ -12,6 +12,7 @@
 		"noUnusedParameters": true,
 		"outDir": "../media",
 		"removeComments": true,
+		"skipLibCheck": true,
 		"strict": true,
 		"target": "es5"
 	}
