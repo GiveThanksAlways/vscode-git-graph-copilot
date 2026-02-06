@@ -274,6 +274,56 @@ export class GitGraphView extends Disposable {
 					error: await copyToClipboard(msg.data)
 				});
 				break;
+			case 'addCommitToChat':
+				try {
+					// Fetch commit details
+					const commitData = await this.dataSource.getCommitDetails(msg.repo, msg.commitHash, true);
+
+					if (commitData.commitDetails) {
+						const commit = commitData.commitDetails;
+						// Format commit information for Copilot Chat
+						let chatQuery = 'Analyze this Git commit:\n\n';
+						chatQuery += `**Commit:** ${msg.commitHash}\n`;
+						chatQuery += `**Author:** ${commit.author} <${commit.authorEmail}>\n`;
+						chatQuery += `**Date:** ${new Date(commit.authorDate * 1000).toLocaleString()}\n\n`;
+						chatQuery += `**Message:**\n${commit.body}\n\n`;
+
+						// Add file changes summary
+						if (commit.fileChanges.length > 0) {
+							chatQuery += `**Files Changed (${commit.fileChanges.length}):**\n`;
+							for (const file of commit.fileChanges) {
+								const changeType = file.type === 'A' ? 'Added' : file.type === 'M' ? 'Modified' : file.type === 'D' ? 'Deleted' : file.type === 'R' ? 'Renamed' : 'Unknown';
+								chatQuery += `- ${changeType}: ${file.newFilePath}`;
+								if (file.additions !== null && file.deletions !== null) {
+									chatQuery += ` (+${file.additions}, -${file.deletions})`;
+								}
+								chatQuery += '\n';
+							}
+						}
+
+						// Open Copilot Chat with the formatted query
+						await vscode.commands.executeCommand('workbench.action.chat.open', {
+							query: chatQuery,
+							isPartialQuery: false
+						});
+
+						this.sendMessage({
+							command: 'addCommitToChat',
+							error: null
+						});
+					} else {
+						this.sendMessage({
+							command: 'addCommitToChat',
+							error: commitData.error || 'Failed to get commit details'
+						});
+					}
+				} catch (error) {
+					this.sendMessage({
+						command: 'addCommitToChat',
+						error: error instanceof Error ? error.message : 'Failed to add commit to chat'
+					});
+				}
+				break;
 			case 'createArchive':
 				this.sendMessage({
 					command: 'createArchive',

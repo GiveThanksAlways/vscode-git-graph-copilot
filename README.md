@@ -19,6 +19,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
         * Apply, Create Branch From, Drop & Pop Stashes
         * View annotated tag details (name, email, date and message)
         * Copy commit hashes, and branch, stash & tag names to the clipboard
+        * **Add Commit to Chat** - Send commit details to GitHub Copilot Chat for AI-powered analysis
     * View commit details and file changes by clicking on a commit. On the Commit Details View you can:
         * View the Visual Studio Code Diff of any file change by clicking on it.
         * Open the current version of any file that was affected in the commit.
