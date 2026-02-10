@@ -1233,6 +1233,14 @@ class GitGraphView {
 					sendMessage({ command: 'copyToClipboard', type: 'Commit Subject', data: commit.message });
 				}
 			}
+		], [
+			{
+				title: 'Add to Copilot Chat',
+				visible: visibility.addToCopilotChat,
+				onClick: () => {
+					runAction({ command: 'addToCopilotChat', repo: this.currentRepo, commitHash: hash }, 'Adding to Copilot Chat');
+				}
+			}
 		]];
 	}
 
