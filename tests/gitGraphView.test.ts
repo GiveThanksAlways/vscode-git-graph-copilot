@@ -3201,6 +3201,33 @@ describe('GitGraphView', () => {
 			});
 		});
 
+		describe('sendToCopilotChat', () => {
+			it('Should send commit info to Copilot Chat', async () => {
+				// Setup
+				const sendToCopilotChatResolvedValue = null;
+				const spyOnSendToCopilotChat = jest.spyOn(utils, 'sendToCopilotChat');
+				spyOnSendToCopilotChat.mockResolvedValueOnce(sendToCopilotChatResolvedValue);
+
+				// Run
+				onDidReceiveMessage({
+					command: 'sendToCopilotChat',
+					commitHash: '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b',
+					commitSubject: 'Test commit message'
+				});
+
+				// Assert
+				await waitForExpect(() => {
+					expect(spyOnSendToCopilotChat).toHaveBeenCalledWith('1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b', 'Test commit message');
+					expect(messages).toStrictEqual([
+						{
+							command: 'sendToCopilotChat',
+							error: sendToCopilotChatResolvedValue
+						}
+					]);
+				});
+			});
+		});
+
 		describe('setGlobalViewState', () => {
 			it('Should set the Global View State', async () => {
 				// Setup

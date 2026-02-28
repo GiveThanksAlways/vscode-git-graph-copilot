@@ -368,6 +368,7 @@ export interface ContextMenuActionsVisibility {
 		readonly reset: boolean;
 		readonly copyHash: boolean;
 		readonly copySubject: boolean;
+		readonly sendToCopilotChat: boolean;
 	};
 	readonly commitDetailsViewFile: {
 		readonly viewDiff: boolean;
@@ -1146,6 +1147,15 @@ export interface ResponseRevertCommit extends ResponseWithErrorInfo {
 	readonly command: 'revertCommit';
 }
 
+export interface RequestSendToCopilotChat extends BaseMessage {
+	readonly command: 'sendToCopilotChat';
+	readonly commitHash: string;
+	readonly commitSubject: string;
+}
+export interface ResponseSendToCopilotChat extends ResponseWithErrorInfo {
+	readonly command: 'sendToCopilotChat';
+}
+
 export interface RequestSetGlobalViewState extends BaseMessage {
 	readonly command: 'setGlobalViewState';
 	readonly state: GitGraphViewGlobalState;
@@ -1299,6 +1309,7 @@ export type RequestMessage =
 	| RequestResetFileToRevision
 	| RequestResetToCommit
 	| RequestRevertCommit
+	| RequestSendToCopilotChat
 	| RequestSetGlobalViewState
 	| RequestSetRepoState
 	| RequestSetWorkspaceViewState
@@ -1362,6 +1373,7 @@ export type ResponseMessage =
 	| ResponseResetFileToRevision
 	| ResponseResetToCommit
 	| ResponseRevertCommit
+	| ResponseSendToCopilotChat
 	| ResponseSetGlobalViewState
 	| ResponseSetWorkspaceViewState
 	| ResponseStartCodeReview

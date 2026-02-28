@@ -8,7 +8,7 @@ import { Logger } from './logger';
 import { RepoFileWatcher } from './repoFileWatcher';
 import { RepoManager } from './repoManager';
 import { ErrorInfo, GitConfigLocation, GitGraphViewInitialState, GitPushBranchMode, GitRepoSet, LoadGitGraphViewTo, RequestMessage, ResponseMessage, TabIconColourTheme } from './types';
-import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openExternalUrl, openFile, showErrorMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from './utils';
+import { UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, archive, copyFilePathToClipboard, copyToClipboard, createPullRequest, getNonce, openExtensionSettings, openExternalUrl, openFile, sendToCopilotChat, showErrorMessage, viewDiff, viewDiffWithWorkingFile, viewFileAtRevision, viewScm } from './utils';
 import { Disposable, toDisposable } from './utils/disposable';
 
 /**
@@ -558,6 +558,12 @@ export class GitGraphView extends Disposable {
 				this.sendMessage({
 					command: 'revertCommit',
 					error: await this.dataSource.revertCommit(msg.repo, msg.commitHash, msg.parentIndex)
+				});
+				break;
+			case 'sendToCopilotChat':
+				this.sendMessage({
+					command: 'sendToCopilotChat',
+					error: await sendToCopilotChat(msg.commitHash, msg.commitSubject)
 				});
 				break;
 			case 'setGlobalViewState':
