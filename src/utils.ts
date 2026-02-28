@@ -487,6 +487,20 @@ export function viewFileAtRevision(repo: string, hash: string, filePath: string)
 }
 
 /**
+ * Open the GitHub Copilot Chat panel with commit information pre-populated.
+ * @param commitHash The hash of the commit.
+ * @param commitSubject The subject of the commit.
+ * @returns A promise resolving to the ErrorInfo of the executed command.
+ */
+export function sendToCopilotChat(commitHash: string, commitSubject: string): Thenable<ErrorInfo> {
+	const query = 'Explain commit ' + commitHash + ': ' + commitSubject;
+	return vscode.commands.executeCommand('workbench.action.chat.open', query).then(
+		() => null,
+		() => 'Visual Studio Code was unable to open Copilot Chat. Make sure the GitHub Copilot Chat extension is installed.'
+	);
+}
+
+/**
  * Open the Visual Studio Code Source Control View.
  * @returns A promise resolving to the ErrorInfo of the executed command.
  */
